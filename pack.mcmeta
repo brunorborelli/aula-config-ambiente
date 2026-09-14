@@ -1,0 +1,18 @@
+{
+  "pack": {
+    "description": [
+      {
+        "text": "Dry Deserts 26.2 — rios, nascentes e aquíferos superficiais removidos de desertos e Badlands",
+        "color": "gold"
+      }
+    ],
+    "min_format": [
+      107,
+      1
+    ],
+    "max_format": [
+      107,
+      1
+    ]
+  }
+}
