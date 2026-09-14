@@ -1,0 +1,90 @@
+name: Build Dry Deserts datapack
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "pack.mcmeta"
+      - "README.txt"
+      - "LICENSE.txt"
+      - "data/**"
+      - ".github/workflows/build-datapack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate datapack
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          required = [
+              Path("pack.mcmeta"),
+              Path("data/minecraft/worldgen/noise_settings/overworld.json"),
+              Path("data/minecraft/worldgen/density_function/overworld/ridges.json"),
+              Path("data/minecraft/worldgen/biome/desert.json"),
+              Path("data/minecraft/worldgen/biome/badlands.json"),
+              Path("data/minecraft/worldgen/biome/eroded_badlands.json"),
+              Path("data/minecraft/worldgen/biome/wooded_badlands.json"),
+          ]
+          for path in required:
+              if not path.is_file():
+                  raise SystemExit(f"Arquivo obrigatório ausente: {path}")
+
+          for path in Path(".").rglob("*.json"):
+              with path.open(encoding="utf-8") as file:
+                  json.load(file)
+
+          with Path("pack.mcmeta").open(encoding="utf-8") as file:
+              meta = json.load(file)["pack"]
+          assert meta["min_format"] == [107, 1]
+          assert meta["max_format"] == [107, 1]
+          assert "supported_formats" not in meta
+          assert "pack_format" not in meta
+
+          biomes = ("desert", "badlands", "eroded_badlands", "wooded_badlands")
+          for name in biomes:
+              path = Path(f"data/minecraft/worldgen/biome/{name}.json")
+              with path.open(encoding="utf-8") as file:
+                  biome = json.load(file)
+              flattened = [feature for step in biome["features"] for feature in step]
+              assert "minecraft:spring_water" not in flattened
+              if name == "desert":
+                  assert "minecraft:desert_well" in flattened
+
+          with Path("data/minecraft/worldgen/noise_settings/overworld.json").open(encoding="utf-8") as file:
+              settings = json.load(file)
+          floodedness = settings["noise_router"]["fluid_level_floodedness"]
+          assert floodedness["input"] == "minecraft:y"
+          assert floodedness["min_inclusive"] == 0.0
+          hot_zone = floodedness["when_in_range"]["when_in_range"]["when_in_range"]
+          assert hot_zone == -1.0
+
+          print("Datapack validado para a estrutura Java 26.2.")
+          PY
+
+      - name: Prepare artifact root
+        shell: bash
+        run: |
+          mkdir -p build/datapack
+          cp pack.mcmeta README.txt LICENSE.txt build/datapack/
+          cp -R data build/datapack/
+
+      - name: Upload datapack ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dry_Deserts_Java_26.2_Compat_Overworld_Fantastico
+          path: build/datapack/
+          if-no-files-found: error
+          retention-days: 7
