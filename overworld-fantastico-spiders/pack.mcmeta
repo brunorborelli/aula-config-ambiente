@@ -1,0 +1,12 @@
+{
+  "pack": {
+    "description": [
+      {
+        "text": "Overworld Fantástico — aranhas mais frequentes em jungles",
+        "color": "dark_green"
+      }
+    ],
+    "min_format": [107, 1],
+    "max_format": [107, 1]
+  }
+}

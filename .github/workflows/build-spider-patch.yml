@@ -1,0 +1,78 @@
+name: Build Overworld Fantastico spider patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "overworld-fantastico-spiders/**"
+      - ".github/workflows/build-spider-patch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("overworld-fantastico-spiders")
+          with (root / "pack.mcmeta").open(encoding="utf-8") as file:
+              pack = json.load(file)["pack"]
+          assert pack["min_format"] == [107, 1]
+          assert pack["max_format"] == [107, 1]
+
+          for biome_name in ("jungle", "sparse_jungle"):
+              path = root / "data/minecraft/worldgen/biome" / f"{biome_name}.json"
+              with path.open(encoding="utf-8") as file:
+                  biome = json.load(file)
+              spiders = [
+                  spawn for spawn in biome["spawners"]["monster"]
+                  if spawn["type"] == "minecraft:spider"
+              ]
+              assert len(spiders) == 1
+              assert spiders[0]["weight"] == 140
+              assert spiders[0]["minCount"] == 4
+              assert spiders[0]["maxCount"] == 4
+
+          print("Patch de aranhas validado para Java 26.2.")
+          PY
+
+      - name: Build ZIP
+        shell: bash
+        run: |
+          cd overworld-fantastico-spiders
+          zip -q -r ../Overworld_Fantastico_Aranhas_Java_26.2.zip .
+
+      - name: Upload temporary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Overworld_Fantastico_Aranhas_Java_26.2
+          path: Overworld_Fantastico_Aranhas_Java_26.2.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Publish stable release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="overworld-fantastico-spiders-26.2-v1.0"
+          FILE="Overworld_Fantastico_Aranhas_Java_26.2.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber
+          else
+            gh release create "$TAG" "$FILE" \
+              --title "Overworld Fantástico — mais aranhas nas jungles" \
+              --notes "Patch para Java 26.2. Aumenta o peso de spawn natural das aranhas de 100 para 140 em Jungle e Sparse Jungle, sem alterar o limite global, o tamanho dos grupos ou outros mobs."
+          fi
