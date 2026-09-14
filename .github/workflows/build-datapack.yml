@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -88,3 +88,24 @@ jobs:
           path: build/datapack/
           if-no-files-found: error
           retention-days: 7
+
+      - name: Build release ZIP
+        shell: bash
+        run: |
+          cd build/datapack
+          zip -q -r ../../Dry_Deserts_Java_26.2_Compat_Overworld_Fantastico.zip .
+
+      - name: Publish stable release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="dry-deserts-java-26.2-v1.0"
+          FILE="Dry_Deserts_Java_26.2_Compat_Overworld_Fantastico.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber
+          else
+            gh release create "$TAG" "$FILE" \
+              --title "Dry Deserts para Java 26.2" \
+              --notes "Dry Deserts adaptado para o formato 107.1 do Java 26.2, com estrutura correta de ZIP e compatibilidade estrutural com Overworld Fantástico. Remove rios, nascentes e aquíferos superficiais de desertos e Badlands; preserva oceanos, poços, aldeias e aquíferos profundos."
+          fi
