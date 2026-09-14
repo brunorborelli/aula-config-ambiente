@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:range_choice",
+  "input": "dry_deserts:vanilla/ridges",
+  "min_inclusive": -0.1,
+  "max_exclusive": 0.1,
+  "when_out_of_range": "dry_deserts:vanilla/ridges",
+  "when_in_range": {
+    "type": "minecraft:mul",
+    "argument1": 0.1,
+    "argument2": {
+      "type": "minecraft:range_choice",
+      "input": "dry_deserts:vanilla/ridges",
+      "min_inclusive": -1000000,
+      "max_exclusive": 0,
+      "when_in_range": -1,
+      "when_out_of_range": 1
+    }
+  }
+}
