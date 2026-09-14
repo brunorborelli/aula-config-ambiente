@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:range_choice",
+  "input": "minecraft:overworld/continents",
+  "min_inclusive": -0.19,
+  "max_exclusive": 1000000,
+  "when_out_of_range": "dry_deserts:vanilla/ridges",
+  "when_in_range": {
+    "type": "minecraft:range_choice",
+    "input": "dry_deserts:overworld/dftemp",
+    "min_inclusive": 0.55,
+    "max_exclusive": 1000000,
+    "when_out_of_range": "dry_deserts:vanilla/ridges",
+    "when_in_range": "dry_deserts:riverless_ridges"
+  }
+}
